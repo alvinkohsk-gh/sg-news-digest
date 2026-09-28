@@ -67,9 +67,9 @@ def build_message():
     sg_items = fetch_items(SG_FEEDS)
     biz_items = fetch_items(BUSINESS_FEEDS)
 
-    parts = [f"<b>\U0001F4F0 Singapore & Business Digest — {today}</b>\n"]
+    parts = [f"<b>\U0001F4F0 Singapore &amp; Business Digest — {today}</b>\n"]
     parts.append(format_section("\U0001F1F8\U0001F1EC Singapore", sg_items))
-    parts.append(format_section("\U0001F4BC Business & Markets", biz_items))
+    parts.append(format_section("\U0001F4BC Business &amp; Markets", biz_items))
 
     message = "\n".join(parts).strip()
     if len(message) > TELEGRAM_LIMIT:
@@ -85,6 +85,8 @@ def send_telegram(message):
         json={"chat_id": chat_id, "text": message, "parse_mode": "HTML"},
         timeout=30,
     )
+    if not resp.ok:
+        print(f"Telegram error response: {resp.text}", file=sys.stderr)
     resp.raise_for_status()
     data = resp.json()
     if not data.get("ok"):
