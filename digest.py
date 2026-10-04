@@ -20,7 +20,7 @@ BUSINESS_FEEDS = [
 
 MAX_ITEMS_PER_SECTION = 6
 LOOKBACK_HOURS = 30
-TELEGRAM_LIMIT = 3500
+TELEGRAM_LIMIT = 6000
 
 
 def fetch_items(feed_urls):
@@ -41,7 +41,7 @@ def fetch_items(feed_urls):
                     if pub_dt < cutoff:
                         continue
                 seen_titles.add(title.lower())
-                items.append({"title": title, "source": source})
+                items.append({"title": title, "source": source, "link": entry.get("link", "")})
         except Exception as e:
             print(f"Failed to fetch {url}: {e}", file=sys.stderr)
     return items[:MAX_ITEMS_PER_SECTION]
@@ -56,7 +56,10 @@ def format_section(heading, items):
         return f"<b>{heading}</b>\nNo fresh updates found.\n"
     lines = [f"<b>{heading}</b>"]
     for i, item in enumerate(items, 1):
-        lines.append(f"{i}. {escape(item['title'])} <i>({escape(item['source'])})</i>")
+        title = escape(item["title"])
+        if item["link"]:
+            title = f'<a href="{html.escape(item["link"], quote=True)}">{title}</a>'
+        lines.append(f"{i}. {title} <i>({escape(item['source'])})</i>")
     return "\n".join(lines) + "\n"
 
 
@@ -82,7 +85,12 @@ def send_telegram(message):
     chat_id = os.environ["TELEGRAM_CHAT_ID"]
     resp = requests.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
-        json={"chat_id": chat_id, "text": message, "parse_mode": "HTML"},
+        json={
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        },
         timeout=30,
     )
     if not resp.ok:
